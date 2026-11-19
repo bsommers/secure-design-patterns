@@ -1,0 +1,97 @@
+{
+  "registry_id": "mcp-2026-07-28",
+  "title": "Model Context Protocol (2026-07-28) & Companion Web/Security Authorities",
+  "authorities": [
+    {
+      "id": "MCP-2026-07-28:TOKEN-PASSTHROUGH",
+      "tier": "normative_spec",
+      "source": "Model Context Protocol Specification (2026-07-28) — Authorization & Security Best Practices",
+      "url": "https://modelcontextprotocol.io/specification/draft/basic/security_best_practices",
+      "rule_summary": "MCP servers MUST NOT accept or forward client tokens upstream unless explicitly audience-scoped; upstream API credentials MUST be bound independently by the server."
+    },
+    {
+      "id": "MCP-2026-07-28:SEP-2575",
+      "tier": "normative_spec",
+      "source": "MCP SEP-2575 — Stateless Capability Discovery (server/discover)",
+      "url": "https://modelcontextprotocol.io/specification/draft/architecture",
+      "rule_summary": "Replaces stateful initialize handshakes with stateless server/discover capability metadata reporting protocolVersion 2026-07-28."
+    },
+    {
+      "id": "MCP-2026-07-28:SEP-2567",
+      "tier": "normative_spec",
+      "source": "MCP SEP-2567 — Sessionless Streamable HTTP Transport",
+      "url": "https://modelcontextprotocol.io/specification/draft/basic/transports",
+      "rule_summary": "Eliminates sticky Mcp-Session-Id headers; every tool invocation MUST be self-contained with explicit pagination cursors and zero cross-request global state."
+    },
+    {
+      "id": "MCP-2026-07-28:SEP-2577",
+      "tier": "normative_spec",
+      "source": "MCP SEP-2577 — Deprecation of Roots, Sampling, and Protocol-Level Logging",
+      "url": "https://modelcontextprotocol.io/specification/draft/changelog",
+      "rule_summary": "Servers targeting 2026-07-28 MUST NOT invoke client sampling (.sample()), workspace roots (.list_roots()), or protocol logging (.set_logging_level())."
+    },
+    {
+      "id": "MCP-2026-07-28:OUTPUT-SCHEMA",
+      "tier": "normative_spec",
+      "source": "MCP Specification (2026-07-28) — Tools outputSchema & structuredContent",
+      "url": "https://modelcontextprotocol.io/specification/draft/server/tools",
+      "rule_summary": "Tools returning structured data SHOULD publish a valid JSON Schema 2020-12 outputSchema and emit matching structuredContent alongside backward-compatible TextContent."
+    },
+    {
+      "id": "MCP-2026-07-28:STDIO-TRANSPORT",
+      "tier": "normative_spec",
+      "source": "MCP Specification (2026-07-28) — stdio Transport Framing",
+      "url": "https://modelcontextprotocol.io/specification/draft/basic/transports#stdio",
+      "rule_summary": "stdout MUST carry exclusively newline-delimited JSON-RPC messages; all diagnostic and operational logs MUST be written to stderr."
+    },
+    {
+      "id": "MCP-2026-07-28:HEADER-MIRRORING",
+      "tier": "normative_spec",
+      "source": "MCP Streamable HTTP — x-mcp-header Parameter Mirroring",
+      "url": "https://modelcontextprotocol.io/specification/draft/basic/transports",
+      "rule_summary": "x-mcp-header annotations MUST apply only to non-sensitive primitive scalar fields and emit valid RFC 9110 header field-names without nullable anyOf unions."
+    },
+    {
+      "id": "JSON-SCHEMA:2020-12",
+      "tier": "normative_spec",
+      "source": "JSON Schema Core & Validation (Draft 2020-12, §8.2.3 $ref)",
+      "url": "https://json-schema.org/draft/2020-12/json-schema-core",
+      "rule_summary": "Defines $ref resolution, allOf/oneOf/anyOf composition semantics, and schema validation rules adopted by OpenAPI 3.1 and MCP 2026-07-28."
+    },
+    {
+      "id": "IETF:RFC-9700",
+      "tier": "normative_spec",
+      "source": "IETF RFC 9700 — Best Current Practice for OAuth 2.0 Security (§4.14 Audience Restriction & Confused Deputy Prevention)",
+      "url": "https://datatracker.ietf.org/doc/html/rfc9700",
+      "rule_summary": "Resource servers MUST validate audience restriction and never replay bearer tokens across trust boundaries without explicit token exchange or separate server credentials."
+    },
+    {
+      "id": "IETF:RFC-9110",
+      "tier": "normative_spec",
+      "source": "IETF RFC 9110 — HTTP Semantics (§5.1 Field Names / tchar)",
+      "url": "https://datatracker.ietf.org/doc/html/rfc9110#section-5.1",
+      "rule_summary": "HTTP header field-names MUST conform to token syntax 1*tchar and exclude CR/LF/whitespace/delimiters to prevent header injection."
+    },
+    {
+      "id": "IETF:RFC-6901",
+      "tier": "normative_spec",
+      "source": "IETF RFC 6901 — JavaScript Object Notation (JSON) Pointer",
+      "url": "https://datatracker.ietf.org/doc/html/rfc6901",
+      "rule_summary": "Specifies deterministic fragment token escaping (~1 for '/', ~0 for '~') used in local OpenAPI/JSON Schema $ref pointers."
+    },
+    {
+      "id": "OPENAPI:3.1.0",
+      "tier": "normative_spec",
+      "source": "OpenAPI Specification v3.1.0 (§4.8.24 Schema Object & §4.8.30 Security Requirement Object)",
+      "url": "https://spec.openapis.org/oas/v3.1.0",
+      "rule_summary": "Defines operation-level security overrides (including explicit unauthenticated security: []) and full JSON Schema 2020-12 alignment."
+    },
+    {
+      "id": "SALTZER-SCHROEDER:1975",
+      "tier": "security_taxonomy",
+      "source": "Saltzer & Schroeder (1975) — The Protection of Information in Computer Systems",
+      "url": "https://ieeexplore.ieee.org/document/1451869",
+      "rule_summary": "Establishes Economy of Mechanism, Fail-Safe Defaults, Complete Mediation, and Least Privilege as foundational security engineering invariants."
+    }
+  ]
+}

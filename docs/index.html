@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Secure Design Patterns Library — mcp-serve (MCP 2026-07-28)</title>
+  <style>
+    :root {
+      --bg: #080d16;
+      --panel: #0f172a;
+      --border: #1e293b;
+      --accent: #38bdf8;
+      --gold: #f59e0b;
+      --green: #10b981;
+      --red: #f43f5e;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: radial-gradient(circle at top, #0f1f38 0%, var(--bg) 55%);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    header {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 3.5rem 1.5rem 2rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.65rem;
+      border-radius: 999px;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      margin-right: 0.5rem;
+    }
+    h1 { font-size: 2.25rem; margin: 0.75rem 0 0.5rem; }
+    p.lead { color: var(--muted); max-width: 820px; font-size: 1.08rem; }
+    main { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.25rem;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.35rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+    .pid { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 700; color: var(--accent); }
+    .sev-critical { color: var(--red); font-size: 0.78rem; font-weight: 700; text-transform: uppercase; }
+    .sev-high { color: var(--gold); font-size: 0.78rem; font-weight: 700; text-transform: uppercase; }
+    .sev-medium { color: var(--green); font-size: 0.78rem; font-weight: 700; text-transform: uppercase; }
+    .card h3 { margin: 0.25rem 0 0.6rem; font-size: 1.1rem; }
+    .card p { color: var(--muted); font-size: 0.92rem; margin: 0 0 1rem; }
+    .auth-tags { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.76rem; color: #cbd5e1; }
+    footer {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 1.5rem;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <header>
+    <span class="badge">Domain: mcp-serve</span>
+    <span class="badge">MCP Spec 2026-07-28</span>
+    <span class="badge">JSON Schema 2020-12</span>
+    <h1>Secure Design Patterns Library</h1>
+    <p class="lead">
+      Specification-source-derived security and architecture patterns with runnable, strictly-typed Python reference implementations—extracted from building and red-teaming <a href="https://github.com/bsommers/forge">MCP Server Forge</a>.
+    </p>
+  </header>
+  <main>
+    <div class="grid">
+      <article class="card">
+        <div>
+          <div class="card-head"><span class="pid">MCP-001</span><span class="sev-critical">Critical</span></div>
+          <h3>Server-Bound Credential Isolation</h3>
+          <p>Prohibits confused-deputy client token passthrough and dispatches per-operation OpenAPI security schemes (including zero-header <code>security: []</code> routes) over one pooled client.</p>
+        </div>
+        <div class="auth-tags">MCP Token Passthrough · RFC 9700 · CWE-287</div>
+      </article>
+      <article class="card">
+        <div>
+          <div class="card-head"><span class="pid">MCP-002</span><span class="sev-critical">Critical</span></div>
+          <h3>Immutable Chassis / Narrow Agent Overlay</h3>
+          <p>Prevents autonomous coding-agent reward hacking via <code>:ro</code> Golden Template mounts and cryptographic SHA-256 pre/post workspace tamper guards.</p>
+        </div>
+        <div class="auth-tags">Saltzer &amp; Schroeder · OWASP LLM06 · CWE-284</div>
+      </article>
+      <article class="card">
+        <div>
+          <div class="card-head"><span class="pid">MCP-003</span><span class="sev-high">High</span></div>
+          <h3>Dual-Axis Structured Payload Bounding</h3>
+          <p>Slices high-cardinality short-string lists (e.g. 3,000 IDs) before proportionally shrinking UTF-8 strings—keeping payloads &le; 32 KiB without erasing <code>outputSchema</code>.</p>
+        </div>
+        <div class="auth-tags">MCP outputSchema · JSON Schema 2020-12 · CWE-770</div>
+      </article>
+      <article class="card">
+        <div>
+          <div class="card-head"><span class="pid">MCP-004</span><span class="sev-high">High</span></div>
+          <h3>Cycle-Safe &amp; Polymorphic Schema Projection</h3>
+          <p>Blocks remote <code>$ref</code> SSRF &amp; path traversal, breaks self-referential cycles via <code>ancestor_refs</code>, flattens <code>allOf</code>, and preserves data-carrier arrays.</p>
+        </div>
+        <div class="auth-tags">RFC 6901 · OpenAPI 3.1 · CWE-918 · CWE-674</div>
+      </article>
+      <article class="card">
+        <div>
+          <div class="card-head"><span class="pid">MCP-005</span><span class="sev-medium">Medium</span></div>
+          <h3>Composite Intent Tools over CRUD Mirrors</h3>
+          <p>Aggregates N+1 foreign-key REST lookups server-side and enforces &le; 15 active tools per client profile to eliminate chatty turns and context bloat.</p>
+        </div>
+        <div class="auth-tags">SEP-2575 · OWASP LLM06 · OWASP LLM10</div>
+      </article>
+      <article class="card">
+        <div>
+          <div class="card-head"><span class="pid">MCP-006</span><span class="sev-high">High</span></div>
+          <h3>Stateless Sessionless Execution</h3>
+          <p>Eliminates mutable module globals for <code>SEP-2567</code> horizontal scaling and uses <code>async def</code> DI providers to prevent async context-manager re-entry crashes.</p>
+        </div>
+        <div class="auth-tags">SEP-2575 · SEP-2567 · CWE-362 · CWE-664</div>
+      </article>
+      <article class="card">
+        <div>
+          <div class="card-head"><span class="pid">MCP-007</span><span class="sev-high">High</span></div>
+          <h3>Primitive RFC 9110 Header Mirroring</h3>
+          <p>Enforces <code>1*tchar</code> syntax, blocks sensitive names, and avoids <code>str | None</code> (<code>anyOf</code>) unions that cause <code>mcp==2.3.0</code> to drop tools silently.</p>
+        </div>
+        <div class="auth-tags">RFC 9110 §5.1 · CWE-113 · CWE-200</div>
+      </article>
+      <article class="card">
+        <div>
+          <div class="card-head"><span class="pid">MCP-008</span><span class="sev-critical">Critical</span></div>
+          <h3>Layered OS Sandbox &amp; STDIO Frame Hygiene</h3>
+          <p>Combines <code>stderr</code>-only JSON logging, live subprocess <code>stdio</code> discovery probes, <code>SEP-2577</code> AST gates, and kernel process sandboxing.</p>
+        </div>
+        <div class="auth-tags">MCP stdio · SEP-2577 · CWE-265 · CWE-116</div>
+      </article>
+    </div>
+  </main>
+  <footer>
+    Repository: <a href="https://github.com/bsommers/secure-design-patterns">github.com/bsommers/secure-design-patterns</a> · Companion Compiler: <a href="https://github.com/bsommers/forge">github.com/bsommers/forge</a>
+  </footer>
+</body>
+</html>

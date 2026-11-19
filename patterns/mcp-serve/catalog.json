@@ -1,0 +1,275 @@
+{
+  "domain": "mcp-serve",
+  "title": "MCP Server (2026-07-28) Secure Architecture & Design Patterns",
+  "spec_version": "2026-07-28",
+  "updated_at": "2026-11-19",
+  "patterns": [
+    {
+      "id": "MCP-001",
+      "slug": "server-bound-credential-isolation",
+      "title": "Server-Bound Credential Isolation & Per-Route Auth Dispatch",
+      "status": "canonical",
+      "severity": "critical",
+      "markdown_file": "MCP-001-server-bound-credential-isolation.md",
+      "reference_module": "patterns/mcp_serve_ref/route_dispatch_auth.py",
+      "failure_mode": "Forwarding MCP client Authorization tokens upstream causes confused-deputy privilege escalation; attaching a single global server credential to every route leaks tokens to public security: [] endpoints and over-privileges read tools.",
+      "invariants": [
+        "Upstream credentials MUST resolve exclusively from server-side environment variables or secret stores, never from MCP client headers or tool inputSchema parameters.",
+        "Explicitly unauthenticated OpenAPI operations (security: []) MUST send zero upstream auth headers.",
+        "Multi-scheme APIs MUST dispatch credentials per (HTTP method, path template) over a single connection pool rather than instantiating per-call HTTP clients."
+      ],
+      "anti_patterns": [
+        "Copying request.headers['authorization'] from an incoming Streamable HTTP MCP request onto the outbound httpx.AsyncClient.",
+        "Adding api_key or bearer_token parameters to @tool signatures so the LLM supplies credentials in plaintext tool calls."
+      ],
+      "authority_ids": [
+        "MCP-2026-07-28:TOKEN-PASSTHROUGH",
+        "IETF:RFC-9700",
+        "OPENAPI:3.1.0",
+        "SALTZER-SCHROEDER:1975"
+      ],
+      "cwe_ids": ["CWE-287", "CWE-863", "CWE-522"],
+      "owasp_ids": ["OWASP-API2:2023", "OWASP-LLM06:2025"],
+      "verification_gates": [
+        "Static AST + schema gate blocking sensitive parameter names (token, secret, password, api_key, authorization) in tool inputSchema.",
+        "Contract test proving /health (security: []) emits zero auth headers while /admin/* dispatches isolated scheme credentials."
+      ],
+      "field_origin": {
+        "repository": "https://github.com/bsommers/forge",
+        "evidence": "src/auth.py RouteDispatchAuth + tests/forge/test_per_op_auth.py enforcing per-operation OpenAPI security routing."
+      }
+    },
+    {
+      "id": "MCP-002",
+      "slug": "immutable-chassis-narrow-agent-overlay",
+      "title": "Immutable Chassis & Narrow Agent Overlay (Anti-Reward-Hacking)",
+      "status": "canonical",
+      "severity": "critical",
+      "markdown_file": "MCP-002-immutable-chassis-narrow-agent-overlay.md",
+      "reference_module": "patterns/mcp_serve_ref/workspace_integrity.py",
+      "failure_mode": "Autonomous coding agents given write access to auth middleware, pyproject.toml, or contract tests bypass failing gates by deleting assertions or lowering coverage thresholds rather than fixing generated domain code.",
+      "invariants": [
+        "Security-critical server chassis files (auth, lifespan DI, response middleware, contract tests, validator scripts) MUST remain read-only during tool synthesis.",
+        "Agent write permissions MUST be restricted strictly to stateless domain tool modules (src/tools/*.py), unit tests (tests/unit/*.py), and user documentation.",
+        "Host-mode synthesis MUST verify pre/post cryptographic SHA-256 digests of every locked file and abort with restoration on any mutation."
+      ],
+      "anti_patterns": [
+        "Running an autonomous coding agent against a full repository root with writable test gates and trusting prompt instructions alone ('please do not edit tests').",
+        "Relying solely on POSIX chmod 0444 without SHA-256 digest verification when the agent runs as the file owner (who can call chmod +w)."
+      ],
+      "authority_ids": [
+        "SALTZER-SCHROEDER:1975"
+      ],
+      "cwe_ids": ["CWE-284", "CWE-353", "CWE-693"],
+      "owasp_ids": ["OWASP-LLM06:2025", "OWASP-API8:2023"],
+      "verification_gates": [
+        "Container synthesis mounts workspace root :ro and bind-mounts only src/tools and tests/unit :rw with --cap-drop=ALL.",
+        "LockedWorkspaceDigest SHA-256 pre/post snapshot check raising TamperDetectionError on byte drift."
+      ],
+      "field_origin": {
+        "repository": "https://github.com/bsommers/forge",
+        "evidence": "forge/orchestrator.py LockedWorkspaceDigest + golden-template/ read-only split verified in tests/forge/test_host_agent_mode.py."
+      }
+    },
+    {
+      "id": "MCP-003",
+      "slug": "dual-axis-structured-payload-bounding",
+      "title": "Dual-Axis Structured Payload Bounding (Cardinality + Byte Budget)",
+      "status": "canonical",
+      "severity": "high",
+      "markdown_file": "MCP-003-dual-axis-structured-payload-bounding.md",
+      "reference_module": "patterns/mcp_serve_ref/dual_axis_bounding.py",
+      "failure_mode": "Stock response-limiting middleware strips outputSchema=None on tools/list, while string-only truncation fails flat when an upstream endpoint returns 3,000 short 10-byte strings (~150 KiB) that exceed context budgets without any single string reaching 16 bytes.",
+      "invariants": [
+        "Response-bounding middleware MUST preserve JSON Schema 2020-12 outputSchema declarations on tools/list.",
+        "Oversized structured payloads MUST first slice collection cardinality (list[:k], k >= 1) so array item schemas (list[Model], list[int], list[str]) remain strictly valid.",
+        "Remaining byte overages MUST shrink long UTF-8 string leaves proportionally and raise an actionable ToolError if irreducible non-string scalar structures still exceed max_bytes."
+      ],
+      "anti_patterns": [
+        "Using stock middleware that erases outputSchema to fall back to unstructured text truncation.",
+        "Truncating raw serialized JSON text mid-payload, producing malformed JSON and violating structuredContent contracts.",
+        "Bounding only individual string lengths >= 16 bytes while ignoring list cardinality."
+      ],
+      "authority_ids": [
+        "MCP-2026-07-28:OUTPUT-SCHEMA",
+        "JSON-SCHEMA:2020-12"
+      ],
+      "cwe_ids": ["CWE-770", "CWE-400"],
+      "owasp_ids": ["OWASP-API4:2023", "OWASP-LLM10:2025"],
+      "verification_gates": [
+        "Contract check asserting every registered tool exposes a non-null JSON Schema 2020-12 outputSchema.",
+        "Torture test feeding 3,000 10-byte IDs (~150 KiB) and asserting bounded output <= 32,768 bytes while still validating against outputSchema."
+      ],
+      "field_origin": {
+        "repository": "https://github.com/bsommers/forge",
+        "evidence": "src/server.py ForgeResponseLimitingMiddleware + Plan 03 W4.4 dual-axis list-cardinality + UTF-8 string bounding."
+      }
+    },
+    {
+      "id": "MCP-004",
+      "slug": "cycle-safe-polymorphic-schema-projection",
+      "title": "Cycle-Safe & Polymorphic Schema Projection",
+      "status": "canonical",
+      "severity": "high",
+      "markdown_file": "MCP-004-cycle-safe-polymorphic-schema-projection.md",
+      "reference_module": "patterns/mcp_serve_ref/schema_normalizer.py",
+      "failure_mode": "Wild OpenAPI 3.x specs trigger SSRF on remote $refs, path traversal on '../' file $refs, infinite recursion on cyclic User.manager -> User schemas, empty {id, status} stubs on allOf/oneOf schemas, or drop nested data arrays (rows, datapoints) behind metadata timestamps.",
+      "invariants": [
+        "Schema normalizers MUST reject remote URI schemes (http://, https://) and confine relative file $refs strictly inside spec_root.resolve().",
+        "Recursive $ref graphs MUST track an active ancestor pointer set (ancestor_refs) and break cycles deterministically into shallow {id: string} stubs.",
+        "allOf property maps and nullable oneOf/anyOf unions MUST be flattened prior to projection, and structural data-carrier arrays (rows, series, datapoints) MUST outrank generic audit timestamps."
+      ],
+      "anti_patterns": [
+        "Resolving arbitrary $ref URLs over the network during OpenAPI ingestion (build-time SSRF).",
+        "Using a naive integer recursion depth limit without an ancestor cycle set, causing valid self-referential schemas to fail normalization.",
+        "Emitting dict[str, Any] passthrough output models that dump 100+ raw upstream fields into LLM context."
+      ],
+      "authority_ids": [
+        "JSON-SCHEMA:2020-12",
+        "IETF:RFC-6901",
+        "OPENAPI:3.1.0"
+      ],
+      "cwe_ids": ["CWE-918", "CWE-22", "CWE-674"],
+      "owasp_ids": ["OWASP-API4:2023", "OWASP-LLM10:2025"],
+      "verification_gates": [
+        "Unit tests verifying http:// and ../outside.yaml $refs raise normalization errors.",
+        "Unit tests verifying cyclic User -> User and allOf composed schemas resolve cleanly with data-carrier fields preserved."
+      ],
+      "field_origin": {
+        "repository": "https://github.com/bsommers/forge",
+        "evidence": "forge/ingest_openapi.py, forge/projection.py, and Plan 03 W4.1-W4.2 cycle-safe polymorphic normalization."
+      }
+    },
+    {
+      "id": "MCP-005",
+      "slug": "composite-intent-tools-over-crud-mirrors",
+      "title": "Composite Intent Tools & Active Toolset Budgets over CRUD Mirrors",
+      "status": "canonical",
+      "severity": "medium",
+      "markdown_file": "MCP-005-composite-intent-tools-over-crud-mirrors.md",
+      "failure_mode": "Mapping 1 REST endpoint = 1 MCP tool forces 6-10 sequential LLM round-trips to join foreign keys for a single triage question, while mounting multiple sharded CRUD servers simultaneously floods the client context past 15 tools.",
+      "invariants": [
+        "Each active client toolset profile MUST expose <= 15 tools so tool-selection accuracy and prompt token overhead stay bounded.",
+        "Multi-endpoint read/triage workflows SHOULD aggregate upstream fan-out/joins server-side over a pooled async HTTP client (e.g., asyncio.gather) and return a single task-oriented summary model.",
+        "Destructive or mutating operations MUST carry explicit ToolAnnotations (destructiveHint=True) and remain isolated from read-only triage profiles unless signed off."
+      ],
+      "anti_patterns": [
+        "Auto-generating 80 raw CRUD tools from an enterprise OpenAPI spec and mounting all shards into a single agent session.",
+        "Forcing the LLM to resolve N+1 foreign-key lookups across separate MCP tool calls."
+      ],
+      "authority_ids": [
+        "MCP-2026-07-28:SEP-2575",
+        "MCP-2026-07-28:OUTPUT-SCHEMA"
+      ],
+      "cwe_ids": ["CWE-400", "CWE-250"],
+      "owasp_ids": ["OWASP-LLM06:2025", "OWASP-LLM10:2025"],
+      "verification_gates": [
+        "Manifest gate rejecting any single server or active client profile exceeding 15 tools.",
+        "Governance artifact gate flagging destructiveHint=True tools for explicit AppSec signoff."
+      ],
+      "field_origin": {
+        "repository": "https://github.com/bsommers/forge",
+        "evidence": "forge/ingest_openapi.py MAX_TOOLS_PER_SERVER=15, forge/orchestrator.py governance signoff, and Plan 03 W5.1 x-mcp-workflows."
+      }
+    },
+    {
+      "id": "MCP-006",
+      "slug": "stateless-sessionless-execution",
+      "title": "Stateless Sessionless Execution & Lifespan Async DI Safety",
+      "status": "canonical",
+      "severity": "high",
+      "markdown_file": "MCP-006-stateless-sessionless-execution.md",
+      "failure_mode": "Storing pagination cursors or tenant state in module globals causes cross-caller data bleed under SEP-2567 sessionless HTTP, while synchronous dependency-injection getters returning an active httpx.AsyncClient cause DI frameworks to re-enter __aenter__ and crash.",
+      "invariants": [
+        "Tool modules MUST contain zero mutable module-level state; all pagination cursors, filters, and idempotency keys MUST pass explicitly via tool arguments and structured outputs.",
+        "Servers MUST support stateless SEP-2575 server/discover and SEP-2567 sessionless Streamable HTTP without sticky Mcp-Session-Id affinity.",
+        "Lifespan-pooled async HTTP clients MUST be injected via an async def dependency provider so async context managers are never re-entered per request."
+      ],
+      "anti_patterns": [
+        "Caching LAST_CURSOR or CURRENT_USER in a Python module global inside src/tools/.",
+        "Instantiating a fresh httpx.AsyncClient() inside every @tool call (exhausting ephemeral sockets and TLS handshakes) or returning the lifespan client from a sync def getter."
+      ],
+      "authority_ids": [
+        "MCP-2026-07-28:SEP-2575",
+        "MCP-2026-07-28:SEP-2567"
+      ],
+      "cwe_ids": ["CWE-362", "CWE-664", "CWE-404"],
+      "owasp_ids": ["OWASP-API4:2023", "OWASP-API1:2023"],
+      "verification_gates": [
+        "AST audit forbidding mutable global assignments in src/tools/*.py.",
+        "Lifespan integration test executing concurrent tool calls over a single shared httpx.AsyncClient."
+      ],
+      "field_origin": {
+        "repository": "https://github.com/bsommers/forge",
+        "evidence": "src/deps.py async def get_http_client() + src/server.py lifespan pool."
+      }
+    },
+    {
+      "id": "MCP-007",
+      "slug": "primitive-rfc9110-header-mirroring",
+      "title": "Primitive RFC 9110 x-mcp-header Mirroring (Non-Union Contract)",
+      "status": "canonical",
+      "severity": "high",
+      "markdown_file": "MCP-007-primitive-rfc9110-header-mirroring.md",
+      "reference_module": "patterns/mcp_serve_ref/header_validator.py",
+      "failure_mode": "Unvalidated x-mcp-header names enable HTTP header injection, mirroring secret fields leaks credentials in transport metadata, and typing optional header parameters as str | None emits JSON Schema anyOf—causing mcp==2.3.0 to silently drop the tool from tools/list.",
+      "invariants": [
+        "x-mcp-header names MUST match RFC 9110 §5.1 token syntax (1*tchar: ^[!#$%&'*+\\-.^_`|~0-9A-Za-z]+$).",
+        "x-mcp-header MUST NEVER be attached to credential/PII fields (token, key, secret, password, authorization, cookie, ssn) or non-primitive types (object, array, number).",
+        "Optional x-mcp-header parameters MUST use non-union primitive defaults (e.g., str = '') rather than nullable anyOf unions (str | None) so MCP SDK schema filters retain the tool."
+      ],
+      "anti_patterns": [
+        "Declaring idempotency_key: Annotated[str | None, Field(default=None, json_schema_extra={'x-mcp-header': 'Idempotency-Key'})] in FastMCP / mcp==2.3.0.",
+        "Mirroring Authorization or X-Api-Key via x-mcp-header."
+      ],
+      "authority_ids": [
+        "MCP-2026-07-28:HEADER-MIRRORING",
+        "IETF:RFC-9110"
+      ],
+      "cwe_ids": ["CWE-113", "CWE-200"],
+      "owasp_ids": ["OWASP-API8:2023", "OWASP-API2:2023"],
+      "verification_gates": [
+        "Contract test asserting tools/list count equals manifest count and no x-mcp-header property contains anyOf/oneOf.",
+        "Validator test rejecting non-tchar header names, sensitive parameter names, and complex types."
+      ],
+      "field_origin": {
+        "repository": "https://github.com/bsommers/forge",
+        "evidence": "forge/ingest_openapi.py TCHAR_RE + src/tools/create_incident.py Idempotency-Key non-union pattern."
+      }
+    },
+    {
+      "id": "MCP-008",
+      "slug": "layered-sandbox-and-stdio-frame-hygiene",
+      "title": "Layered OS Sandboxing, SEP-2577 Hygiene & STDIO Frame Integrity",
+      "status": "canonical",
+      "severity": "critical",
+      "markdown_file": "MCP-008-layered-sandbox-and-stdio-frame-hygiene.md",
+      "failure_mode": "A single stray print() on stdout corrupts JSON-RPC framing over stdio, deprecated SEP-2577 calls fail 2026-07-28 clients, and teams mistake static AST bans on 'import os' for an actual security boundary when executing untrusted code.",
+      "invariants": [
+        "MCP stdio servers MUST reserve stdout strictly for JSON-RPC frames and emit structured JSON logs exclusively to stderr.",
+        "2026-07-28 tools MUST NOT invoke deprecated SEP-2577 methods (.sample(), .list_roots(), .set_logging_level()) or embed imperative prompt-injection phrases in docstrings.",
+        "Static AST audits MUST be paired with kernel-enforced process isolation (Docker --network=none --cap-drop=ALL, macOS sandbox-exec, or Linux bubblewrap) whenever running untrusted synthesis or third-party code."
+      ],
+      "anti_patterns": [
+        "Calling print() for debug logging inside a tool module or library initialization path.",
+        "Treating Python AST inspection alone as sufficient containment against adversarial code execution."
+      ],
+      "authority_ids": [
+        "MCP-2026-07-28:STDIO-TRANSPORT",
+        "MCP-2026-07-28:SEP-2577",
+        "SALTZER-SCHROEDER:1975"
+      ],
+      "cwe_ids": ["CWE-265", "CWE-116", "CWE-74"],
+      "owasp_ids": ["OWASP-LLM05:2025", "OWASP-LLM01:2025"],
+      "verification_gates": [
+        "Ruff T20 print ban + AST SEP-2577 & docstring prompt-injection audit.",
+        "Live subprocess PythonStdioTransport server/discover probe verifying clean JSON-RPC framing over stdout/stderr.",
+        "OS/container sandbox policy enforcement (--cap-drop=ALL / sandbox-exec / bwrap) during synthesis."
+      ],
+      "field_origin": {
+        "repository": "https://github.com/bsommers/forge",
+        "evidence": "scripts/validate_mcp.py 5-gate harness + forge/orchestrator.py container/host isolation."
+      }
+    }
+  ]
+}
