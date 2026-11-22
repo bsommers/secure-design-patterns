@@ -1,10 +1,18 @@
 # Secure Design Patterns Library
 
+<p align="center">
+  <img src="docs/assets/logo.svg" alt="Secure Design Patterns — Blue-Note Prism Hero Banner" width="100%" />
+</p>
+
 > **Specification-derived, machine-validated security & architecture patterns with runnable reference implementations—populated with `mcp-serve` for Model Context Protocol (`2026-07-28`).**
 
 [![MCP Spec](https://img.shields.io/badge/MCP_Spec-2026--07--28-0ea5e9)](patterns/mcp-serve/README.md)
 [![JSON Schema](https://img.shields.io/badge/JSON_Schema-2020--12-10b981)](schema/pattern.schema.json)
 [![License: MIT](https://img.shields.io/badge/License-MIT-f59e0b)](LICENSE)
+
+<p align="center">
+  <img src="docs/assets/hero-illustration.png" alt="Art-Deco Sapphire Prism Shield Splitting Untrusted Input into 8 Harmonic Beams" width="100%" />
+</p>
 
 ---
 
